@@ -5,7 +5,6 @@ import requests
 import json
 from listing import lst 
 
-
 def answer():
     while True:
         ans=input("Would you like to loop thourgh all postings Y/N ?")
@@ -16,7 +15,7 @@ def answer():
         else:
             location=input("Please insert location name (Location must match the location in Nehnutelnosti)")
             return f"https://www.nehnutelnosti.sk/vysledky/{location}?page=1"
-
+        
 def find_last_page(url:str):
     response=requests.get(url)
     soup=BeautifulSoup(response.text,'html.parser')
@@ -24,23 +23,20 @@ def find_last_page(url:str):
     page_list=page.find_all("li")
     return int(page_list[-1].text.strip())
   
-
-
 def main():
     #Ask user if he wants to loop through all postings or let him choose the location
     url=answer()
+
     #find last page from li element
     last_page=find_last_page(url)
-    #Create Loop for page number until "Všetky inzeráty" appears
+
+    #delete the url page number:
+    url=url[:len(url)-1]
+
+    #loop from first to last page and reqeust url
     for page in range(1,last_page):
-        print(page)
-    #fund last page
+        print(url+str(page))
 
-    url="https://www.nehnutelnosti.sk/vysledky/bernolakovo?page=2"
-    page_num=1
-
-
-    #soup=BeautifulSoup(response.text,'html.parser')
 #Find block with separate posting
     listings = soup.find_all("div", class_="MuiStack-root mui-1xoye06")
 #loop through posting block and find details
