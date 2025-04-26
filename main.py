@@ -3,23 +3,57 @@ from bs4 import BeautifulSoup
 import pandas as pd
 import requests
 import json
+from listing import lst 
+
+
+def answer():
+    while True:
+        ans=input("Would you like to loop thourgh all postings Y/N ?")
+        if ans.lower()=="y":
+            return "https://www.nehnutelnosti.sk/vysledky?page=1"
+                #https://www.nehnutelnosti.sk/vysledky/bernolakovo?page=2
+                
+        else:
+            location=input("Please insert location name (Location must match the location in Nehnutelnosti)")
+            return f"https://www.nehnutelnosti.sk/vysledky/{location}?page=1"
+
+def find_last_page(url:str):
+    response=requests.get(url)
+    soup=BeautifulSoup(response.text,'html.parser')
+    page=soup.find("ul",attrs="MuiPagination-ul mui-nhb8h9")
+    page_list=page.find_all("li")
+    return int(page_list[-1].text.strip())
+  
 
 
 def main():
+    #Ask user if he wants to loop through all postings or let him choose the location
+    url=answer()
+    #find last page from li element
+    last_page=find_last_page(url)
+    #Create Loop for page number until "Všetky inzeráty" appears
+    for page in range(1,last_page):
+        print(page)
+    #fund last page
+
     url="https://www.nehnutelnosti.sk/vysledky/bernolakovo?page=2"
-    response=requests.get(url)
-    print(response)
-
-    soup=BeautifulSoup(response.text,'html.parser')
-    post_name = soup.find_all("h2", attrs={"data-test-id": "text"})
-    post_price=soup.find_all(attrs={"class":"MuiTypography-root MuiTypography-h5 mui-7e5awq","data-test-id": "text"})
-    post_location=soup.find_all("p",attrs={"class":"MuiTypography-root MuiTypography-body3 MuiTypography-noWrap mui-e9ka76","data-test-id": "text"})
+    page_num=1
 
 
+    #soup=BeautifulSoup(response.text,'html.parser')
+#Find block with separate posting
+    listings = soup.find_all("div", class_="MuiStack-root mui-1xoye06")
+#loop through posting block and find details
+    for listing in listings:
+        listing_name = listing.find("h2")
+        location = listing.find("p", attrs={"class": "MuiTypography-root MuiTypography-body3 MuiTypography-noWrap mui-e9ka76"})
+        price=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-h5 mui-7e5awq"})
+        price_per_m=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"})
 
-
-    for posting in post_location:
-        print(posting)
-        print(posting.text.strip())
+        new_listing=lst(listing_name.text.strip(),location.text.strip())
+        
+        
 
 main()
+
+
