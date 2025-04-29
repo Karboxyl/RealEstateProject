@@ -2,7 +2,6 @@ import numpy as np
 from bs4 import BeautifulSoup
 import pandas as pd
 import requests
-import json
 from listing import lst 
 
 def answer():
@@ -23,6 +22,47 @@ def find_last_page(url:str):
     page_list=page.find_all("li")
     return int(page_list[-1].text.strip())
 
+def load_listings(url:str,last_page:int):
+    list_dictionary={}
+    for page in range(1,last_page+1):
+        #request url
+        response=requests.get(f"{url}{page}")
+        #parse response
+        parsed_response=BeautifulSoup(response.text,'html.parser')
+        #identify block with listings
+        listings=parsed_response.find_all("div", class_="MuiStack-root mui-1xoye06")
+        #loop thourgh listings and export data and create lst object
+        for listing in listings:
+            listing_name = listing.find("h2").text.strip()
+            location = listing.find("p", attrs={"class": "MuiTypography-root MuiTypography-body2 MuiTypography-noWrap mui-3vjwr4"}).text.strip()
+            price=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-h5 mui-7e5awq"}).text.strip()
+            #check if price is available if not add -1
+            if price=="Info v RK" or price=="Cena dohodou":
+                price=-1
+            elif "mes" in price:
+                price=price.replace(" €/mes.","")
+                print(price)
+            else:
+                price=price.replace("\xa0","")
+                price=price[:len(price)-2]
+                print(float(price))
+
+
+            price_per_m=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"})
+            if price_per_m is None:
+                price_per_m=-1
+            elif "mes" in listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"}).text.strip():
+                price_per_m=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"}).text.strip().replace(" €/m²/mes.","").replace(",","").replace(" ","")
+                print (price_per_m)
+            else:
+                price_per_m=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"}).text.strip()
+                price_per_m=price_per_m.replace(" €/m²","").replace(" ","").replace(",",".")
+                print(price_per_m)
+            new_listing=lst(listing_name,location,price,price_per_m)
+            #list_dictionary[new_listing.name]={"listing_name":new_listing.name,"listing_location":new_listing.location,"listing_price":new_listing.price}
+
+    print(list_dictionary)
+
 
 #----------------------------Main------------------------------------------------------
 
@@ -39,29 +79,11 @@ def main():
     #delete the url page number:
     url=url[:len(url)-1]
 
+    #use the url and last page info to loop through all pages and all listings and return dictionary with these listings.
+    list_dictionary=load_listings(url,last_page)
     #loop from first to last page and request url
-    for page in range(1,last_page+1):
-        #request url
-        response=requests.get(f"{url}{page}")
-        #parse response
-        parsed_response=BeautifulSoup(response.text,'html.parser')
-        #identify block with listings
-        listings=parsed_response.find_all("div", class_="MuiStack-root mui-1xoye06")
-        #loop thourgh listings and export data and create lst object
-        for listing in listings:
-            listing_name = listing.find("h2").text.strip()
-            location = listing.find("p", attrs={"class": "MuiTypography-root MuiTypography-body2 MuiTypography-noWrap mui-3vjwr4"}).text.strip()
-            price=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-h5 mui-7e5awq"}).text.strip()
-            price_per_m=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"})
-            new_listing=lst(listing_name,location,float(price),float(price_per_m))
-            list_dictionary[new_listing.name]={"listing_name":new_listing.name,"listing_location":new_listing.location,"listing_price":new_listing.price}
-
-    print(list_dictionary)
     
-
-
-        
-        
+    
 
 main()
 
