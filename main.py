@@ -2,6 +2,7 @@ import numpy as np
 from bs4 import BeautifulSoup
 import pandas as pd
 import requests
+import csv
 from listing import lst 
 
 def answer():
@@ -24,7 +25,9 @@ def find_last_page(url:str):
 
 def load_listings(url:str,last_page:int):
     list_dictionary={}
-    for page in range(1,last_page+1):
+    #!!!!!!!!!!!!!!!LAST PAGE SETUP TO 2 FOR TESTING----!!!!!!!!!!!!!!!!!!!!!!!!
+    for page in range(1,2): #for page in range(1,last_page+1):
+    #!!!!!!!!!!!!!!!LAST PAGE SETUP TO 2 FOR TESTING----!!!!!!!!!!!!!!!!!!!!!!!!
         #request url
         response=requests.get(f"{url}{page}")
         #parse response
@@ -45,7 +48,6 @@ def load_listings(url:str,last_page:int):
             else:
                 price=price.replace("\xa0","")
                 price=price[:len(price)-2]
-                print(float(price))
 
 
             price_per_m=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"})
@@ -53,15 +55,27 @@ def load_listings(url:str,last_page:int):
                 price_per_m=-1
             elif "mes" in listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"}).text.strip():
                 price_per_m=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"}).text.strip().replace(" €/m²/mes.","").replace(",","").replace(" ","")
-                print (price_per_m)
             else:
                 price_per_m=listing.find("p",attrs={"class": "MuiTypography-root MuiTypography-label1 mui-u7akpj"}).text.strip()
                 price_per_m=price_per_m.replace(" €/m²","").replace(" ","").replace(",",".")
-                print(price_per_m)
             new_listing=lst(listing_name,location,price,price_per_m)
-            #list_dictionary[new_listing.name]={"listing_name":new_listing.name,"listing_location":new_listing.location,"listing_price":new_listing.price}
+            list_dictionary[new_listing.name]={"listing_name":new_listing.name,"listing_location":new_listing.location,"listing_price":new_listing.price}
 
-    print(list_dictionary)
+    return list_dictionary
+
+
+def create_csv_from_dictionary(list_dictionary:dict):
+    #USING ; as delimiter
+    with open ("listings.csv","w", encoding="utf-8",newline="") as csv_file:
+        writer = csv.writer(csv_file, delimiter=";")
+        writer.writerow(["Listing_name", "Listing_location", "Listing_price"])
+        for key,value in list_dictionary.items():
+                writer.writerow([
+                value["listing_name"],
+                value["listing_location"],
+                value["listing_price"]
+            ])
+     
 
 
 #----------------------------Main------------------------------------------------------
@@ -81,7 +95,10 @@ def main():
 
     #use the url and last page info to loop through all pages and all listings and return dictionary with these listings.
     list_dictionary=load_listings(url,last_page)
-    #loop from first to last page and request url
+
+
+    #Looping through csv and using csv module iwth writer method do write data in csv
+    create_csv_from_dictionary(list_dictionary)
     
     
 
